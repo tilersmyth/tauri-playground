@@ -1,21 +1,19 @@
-import {
-  Route,
-  RouterProvider,
-  createBrowserRouter,
-  createRoutesFromElements,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/home";
-import { AboutPage } from "./pages/about";
+import { AdminPage } from "./pages/admin";
+import { AuthRoutes, NonAuthRoutes } from "./auth";
 
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <Route path="/">
-      <Route index element={<HomePage />} />
-      <Route path="about" element={<AboutPage />} />
-    </Route>
-  )
+const App = () => (
+  <Router>
+    <Routes>
+      <Route element={<NonAuthRoutes />}>
+        <Route path="/" element={<HomePage />} />
+      </Route>
+      <Route element={<AuthRoutes />}>
+        <Route path="/admin" element={<AdminPage />} />
+      </Route>
+    </Routes>
+  </Router>
 );
-
-const App = () => <RouterProvider router={router} />;
 
 export default App;
