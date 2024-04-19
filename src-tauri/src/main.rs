@@ -5,16 +5,11 @@
 use rand::Rng;
 use serde::Serialize;
 use serde_json::to_string;
-use serialport::{available_ports, Error, SerialPort, SerialPortInfo, SerialPortType, UsbPortInfo};
+use serialport::{available_ports, Error, SerialPort, SerialPortInfo, SerialPortType};
 use std::io;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tauri::{
-    api::path::local_data_dir,
-    async_runtime::{Receiver, Sender},
-    AppHandle, Manager,
-};
-use tokio::sync::mpsc;
+use tauri::{AppHandle, Manager};
 
 // Arduino for testing
 const TARGET_VENDOR: u16 = 9025;
@@ -29,7 +24,6 @@ fn main() {
             let port_info = Arc::new(Mutex::new(None));
             let reader_port = port_info.clone();
 
-            let (tx, mut rx) = mpsc::channel::<Option<SerialPortInfo>>(100);
             tauri::async_runtime::spawn(async move { watch_ports(&app_handle, port_info) });
 
             let read_port_app_handle = app.handle().clone();
@@ -118,7 +112,8 @@ fn read_port<R: tauri::Runtime>(
                 }
                 _ => {
                     target_port = None;
-                    std::thread::sleep(std::time::Duration::from_secs(2));
+                    drop(locked_port_info);
+                    std::thread::sleep(std::time::Duration::from_secs(1));
                     continue;
                 }
             }
@@ -135,8 +130,10 @@ fn read_port<R: tauri::Runtime>(
                     match p.read(serial_buf.as_mut_slice()) {
                         Ok(t) => println!("reading..."),
                         Err(ref e) if e.kind() == io::ErrorKind::BrokenPipe => {
+                            manager.emit_all("port_reading", "".to_string()).unwrap();
                             target_port = None;
                             std::thread::sleep(std::time::Duration::from_secs(1));
+                            continue;
                         }
                         Err(e) => println!("read error: {}", e),
                     }

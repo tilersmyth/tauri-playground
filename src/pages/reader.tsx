@@ -15,5 +15,9 @@ export const PortReading: React.FC = () => {
     };
   }, []);
 
+  if (!reading) {
+    return null;
+  }
+
   return <Typography.Title level={5}>Reading: {reading}</Typography.Title>;
 };
